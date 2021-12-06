@@ -3,23 +3,19 @@ package internal
 import (
 	"context"
 	"fmt"
+	"go.uber.org/zap"
 	"time"
 
-	"golang.org/x/sync/errgroup"
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
+	"golang.org/x/sync/errgroup"
 
+	sdk "github.com/vk-cs/iot-go-agent-sdk"
 	"github.com/vk-cs/iot-go-agent-sdk/gen/swagger/http_client/client"
 	"github.com/vk-cs/iot-go-agent-sdk/gen/swagger/http_client/client/agents"
-	"github.com/vk-cs/iot-go-agent-sdk/gen/swagger/http_client/models"
 	"github.com/vk-cs/iot-go-agent-sdk/gen/swagger/http_client/client/events"
+	"github.com/vk-cs/iot-go-agent-sdk/gen/swagger/http_client/models"
 )
-
-// FIXME: move this to sdk
-func getTimestamp() *int64 {
-	now := time.Now().UnixNano() / 1000
-	return &now
-}
 
 // FIXME: move this to sdk
 func getDurationFromDriverConfig(input interface{}, key string, fallback time.Duration) time.Duration {
@@ -47,7 +43,7 @@ func getDurationFromDriverConfig(input interface{}, key string, fallback time.Du
 		return fallback
 	}
 
-	if time.Second * 10 <= d && d <= time.Hour {
+	if time.Second*10 <= d && d <= time.Hour {
 		return d
 	} else {
 		return fallback
@@ -55,6 +51,7 @@ func getDurationFromDriverConfig(input interface{}, key string, fallback time.Du
 }
 
 type Emulator struct {
+	logger   *zap.Logger
 	source   *DataSource
 	cli      *client.HTTP
 	timeout  time.Duration
@@ -85,7 +82,7 @@ func (e *Emulator) sendEvents(ctx context.Context, tags []*models.TagValueObject
 
 	params := &events.AddEventParams{
 		Context: requestCtx,
-			Body: &models.AddEvent{
+		Body: &models.AddEvent{
 			Tags: tags,
 		},
 	}
@@ -98,31 +95,30 @@ func (e *Emulator) sendEvents(ctx context.Context, tags []*models.TagValueObject
 }
 
 func (e *Emulator) onStart(ctx context.Context) error {
-	now := getTimestamp()
+	now := sdk.Now()
 	err := e.sendEvents(ctx, []*models.TagValueObject{
 		// set agent status
 		{
-			ID: e.cfg.StatusTag.ID,
-			Timestamp: now,
-			// FIXME: move status values to sdk
-			Value: "online",
+			ID:        e.cfg.StatusTag.ID,
+			Timestamp: &now,
+			Value:     sdk.Online,
 		},
 		// set device status
 		{
-			ID: e.cfg.Device.StatusTag.ID,
-			Timestamp: now,
-			Value: "online",
+			ID:        e.cfg.Device.StatusTag.ID,
+			Timestamp: &now,
+			Value:     sdk.Online,
 		},
 		// set agent config version
 		{
-			ID: e.cfg.ConfigTags.VersionTag.ID,
-			Timestamp: now,
-			Value: e.cfg.Version,
+			ID:        e.cfg.ConfigTags.VersionTag.ID,
+			Timestamp: &now,
+			Value:     e.cfg.Version,
 		},
 		{
-			ID: e.cfg.ConfigTags.UpdatedAtTag.ID,
-			Timestamp: now,
-			Value: now,
+			ID:        e.cfg.ConfigTags.UpdatedAtTag.ID,
+			Timestamp: &now,
+			Value:     now,
 		},
 	})
 	if err != nil {
@@ -133,19 +129,19 @@ func (e *Emulator) onStart(ctx context.Context) error {
 }
 
 func (e *Emulator) onShutdown(ctx context.Context) error {
-	now := getTimestamp()
+	now := sdk.Now()
 	err := e.sendEvents(ctx, []*models.TagValueObject{
 		// set agent status
 		{
 			ID:        e.cfg.StatusTag.ID,
-			Timestamp: now,
-			Value:     "offline",
+			Timestamp: &now,
+			Value:     sdk.Offline,
 		},
 		// set device status
 		{
 			ID:        e.cfg.Device.StatusTag.ID,
-			Timestamp: now,
-			Value:     "offline",
+			Timestamp: &now,
+			Value:     sdk.Offline,
 		},
 	})
 	if err != nil {
@@ -156,6 +152,7 @@ func (e *Emulator) onShutdown(ctx context.Context) error {
 }
 
 func (e *Emulator) Bootstrap(ctx context.Context) error {
+	e.logger.Info("Bootstrapping emulator")
 	rawConfig, err := e.getConfig(ctx)
 	if err != nil {
 		return err
@@ -166,6 +163,8 @@ func (e *Emulator) Bootstrap(ctx context.Context) error {
 }
 
 func (e *Emulator) Run(ctx context.Context) error {
+	e.logger.Info("Running emulator")
+
 	err := e.onStart(ctx)
 	if err != nil {
 		return err
@@ -188,11 +187,14 @@ func (e *Emulator) Run(ctx context.Context) error {
 				return nil
 
 			case <-ticker.C:
+				value := e.source.GetTemperatureValue()
+				e.logger.Info("Sending temperature value", zap.Float64("value", value))
+				now := sdk.Now()
 				err := e.sendEvents(groupCtx, []*models.TagValueObject{
 					{
-						ID: tag.ID,
-						Timestamp: getTimestamp(),
-						Value: e.source.GetTemperatureValue(),
+						ID:        tag.ID,
+						Timestamp: &now,
+						Value:     value,
 					},
 				})
 				if err != nil {
@@ -210,11 +212,14 @@ func (e *Emulator) Run(ctx context.Context) error {
 				return nil
 
 			case <-ticker.C:
+				value := e.source.GetHumidityValue()
+				e.logger.Info("Sending humidity value", zap.Float64("value", value))
+				now := sdk.Now()
 				err := e.sendEvents(groupCtx, []*models.TagValueObject{
 					{
-						ID: tag.ID,
-						Timestamp: getTimestamp(),
-						Value: e.source.GetHumidityValue(),
+						ID:        tag.ID,
+						Timestamp: &now,
+						Value:     value,
 					},
 				})
 				if err != nil {
@@ -232,11 +237,14 @@ func (e *Emulator) Run(ctx context.Context) error {
 				return nil
 
 			case <-ticker.C:
+				value := e.source.GetLightValue()
+				e.logger.Info("Sending light state value", zap.Bool("value", value))
+				now := sdk.Now()
 				err := e.sendEvents(groupCtx, []*models.TagValueObject{
 					{
-						ID: tag.ID,
-						Timestamp: getTimestamp(),
-						Value: e.source.GetLightValue(),
+						ID:        tag.ID,
+						Timestamp: &now,
+						Value:     value,
 					},
 				})
 				if err != nil {
@@ -249,11 +257,12 @@ func (e *Emulator) Run(ctx context.Context) error {
 	return group.Wait()
 }
 
-func NewEmulator(source *DataSource, cli *client.HTTP, timeout time.Duration, login, password string) *Emulator {
+func NewEmulator(logger *zap.Logger, source *DataSource, cli *client.HTTP, timeout time.Duration, login, password string) *Emulator {
 	return &Emulator{
-		cli: cli,
-		timeout: timeout,
-		source: source,
+		logger:   logger,
+		cli:      cli,
+		timeout:  timeout,
+		source:   source,
 		authInfo: httptransport.BasicAuth(login, password),
 	}
 }

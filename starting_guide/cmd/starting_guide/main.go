@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"go.uber.org/zap/zapcore"
 	"log"
 	"os"
 	"os/signal"
@@ -13,6 +12,7 @@ import (
 
 	sdk "github.com/vk-cs/iot-go-agent-sdk"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 
 	"github.com/vk-cs/iot-emulators/starting_guide/internal"
 )
@@ -23,10 +23,10 @@ const (
 
 func main() {
 	cfg := zap.Config{
-		Level:            zap.NewAtomicLevelAt(zap.DebugLevel),
-		Development:      true,
-		Encoding:         "console",
-		EncoderConfig:    zapcore.EncoderConfig{
+		Level:       zap.NewAtomicLevelAt(zap.DebugLevel),
+		Development: true,
+		Encoding:    "console",
+		EncoderConfig: zapcore.EncoderConfig{
 			// Keys can be anything except the empty string.
 			TimeKey:        "T",
 			LevelKey:       "L",
@@ -53,7 +53,7 @@ func main() {
 	password := flag.String("password", "", "password for agent")
 
 	flag.Parse()
-	if *login == ""  {
+	if *login == "" {
 		fmt.Println("Missing login param")
 		os.Exit(1)
 	}
@@ -79,7 +79,7 @@ func main() {
 		cancel()
 	}()
 
-	emulator := internal.NewEmulator(source, cli, defaultTimeout, *login, *password)
+	emulator := internal.NewEmulator(logger, source, cli, defaultTimeout, *login, *password)
 	err = emulator.Bootstrap(ctx)
 	if err != nil {
 		logger.Fatal("Failed to bootstrap emulator", zap.Error(err))

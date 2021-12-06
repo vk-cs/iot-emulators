@@ -90,8 +90,8 @@ func NewDataSource() (*DataSource, error) {
 
 	return &DataSource{
 		temperature: getFloatIterator(temperature),
-		humidity: getFloatIterator(humidity),
-		light: getBoolIterator(light),
+		humidity:    getFloatIterator(humidity),
+		light:       getBoolIterator(light),
 	}, nil
 }
 

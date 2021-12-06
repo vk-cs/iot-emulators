@@ -2,42 +2,28 @@ package internal
 
 import (
 	"errors"
+	sdk "github.com/vk-cs/iot-go-agent-sdk"
 
 	"github.com/vk-cs/iot-go-agent-sdk/gen/swagger/http_client/models"
 )
 
 type ConfigTags struct {
-	VersionTag models.TagConfigObject
+	VersionTag   models.TagConfigObject
 	UpdatedAtTag models.TagConfigObject
 }
 
 type DeviceConfig struct {
-	StatusTag models.TagConfigObject
+	StatusTag      models.TagConfigObject
 	TemperatureTag models.TagConfigObject
-	HumidityTag models.TagConfigObject
-	LightTag models.TagConfigObject
+	HumidityTag    models.TagConfigObject
+	LightTag       models.TagConfigObject
 }
 
 type AgentConfig struct {
-	StatusTag models.TagConfigObject
+	StatusTag  models.TagConfigObject
 	ConfigTags ConfigTags
-	Version *string
-	Device DeviceConfig
-}
-
-// FIXME: move this to sdk
-func findTagByPath(tags []*models.TagConfigObject, path []string) (*models.TagConfigObject, bool) {
-	for _, tag := range tags {
-		if *tag.Name == path[0] {
-			if len(path) == 1 {
-				return tag, true
-			} else {
-				return findTagByPath(tag.Children, path[1:])
-			}
-		}
-	}
-
-	return nil, false
+	Version    *string
+	Device     DeviceConfig
 }
 
 func findDeviceByName(input []*models.DeviceConfigObject, name string) (*models.DeviceConfigObject, bool) {
@@ -51,18 +37,18 @@ func findDeviceByName(input []*models.DeviceConfigObject, name string) (*models.
 }
 
 func parseConfig(input models.ConfigObject) (AgentConfig, error) {
-	agentStatusTag, found := findTagByPath(input.Agent.Tag.Children, []string{"$state", "$status"})
+	agentStatusTag, found := sdk.FindTagByPath(input.Agent.Tag.Children, sdk.StatusTagPath)
 	if !found {
 		return AgentConfig{}, errors.New("not found status tag in agent config")
 	}
 
 	// FIXME: move system tags paths to sdk
-	agentConfigVersionTag, found := findTagByPath(input.Agent.Tag.Children, []string{"$state", "$config", "$version"})
+	agentConfigVersionTag, found := sdk.FindTagByPath(input.Agent.Tag.Children, sdk.ConfigVersionTagPath)
 	if !found {
 		return AgentConfig{}, errors.New("not found status tag in device config")
 	}
 
-	agentConfigUpdatedAtTag, found := findTagByPath(input.Agent.Tag.Children, []string{"$state", "$config", "$updated_at"})
+	agentConfigUpdatedAtTag, found := sdk.FindTagByPath(input.Agent.Tag.Children, sdk.ConfigUpdatedAtTagPath)
 	if !found {
 		return AgentConfig{}, errors.New("not found status tag in device config")
 	}
@@ -72,22 +58,22 @@ func parseConfig(input models.ConfigObject) (AgentConfig, error) {
 		return AgentConfig{}, errors.New("not found device in agent config")
 	}
 
-	deviceStatusTag, found := findTagByPath(input.Agent.Tag.Children, []string{"$state", "$status"})
+	deviceStatusTag, found := sdk.FindTagByPath(input.Agent.Tag.Children, sdk.StatusTagPath)
 	if !found {
 		return AgentConfig{}, errors.New("not found status tag in device config")
 	}
 
-	deviceTemperatureTag, found := findTagByPath(device.Tag.Children, []string{"temperature"})
+	deviceTemperatureTag, found := sdk.FindTagByPath(device.Tag.Children, []string{"temperature"})
 	if !found {
 		return AgentConfig{}, errors.New("not found temperature tag in device config")
 	}
 
-	deviceHumidityTag, found := findTagByPath(device.Tag.Children, []string{"humidity"})
+	deviceHumidityTag, found := sdk.FindTagByPath(device.Tag.Children, []string{"humidity"})
 	if !found {
 		return AgentConfig{}, errors.New("not found humidity tag in device config")
 	}
 
-	deviceLightTag, found := findTagByPath(device.Tag.Children, []string{"light"})
+	deviceLightTag, found := sdk.FindTagByPath(device.Tag.Children, []string{"light"})
 	if !found {
 		return AgentConfig{}, errors.New("not found light tag in device config")
 	}
@@ -95,13 +81,13 @@ func parseConfig(input models.ConfigObject) (AgentConfig, error) {
 	return AgentConfig{
 		StatusTag: *agentStatusTag,
 		Device: DeviceConfig{
-			StatusTag: *deviceStatusTag,
+			StatusTag:      *deviceStatusTag,
 			TemperatureTag: *deviceTemperatureTag,
-			HumidityTag: *deviceHumidityTag,
-			LightTag: *deviceLightTag,
+			HumidityTag:    *deviceHumidityTag,
+			LightTag:       *deviceLightTag,
 		},
 		ConfigTags: ConfigTags{
-			VersionTag: *agentConfigVersionTag,
+			VersionTag:   *agentConfigVersionTag,
 			UpdatedAtTag: *agentConfigUpdatedAtTag,
 		},
 		Version: input.Version,
