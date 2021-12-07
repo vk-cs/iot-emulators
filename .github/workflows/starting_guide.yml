@@ -1,0 +1,27 @@
+name: Build
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.16
+
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: Build
+        run: cd starting_guide && make build && make release
+
+      - name: Create release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "release/*"
+          token: ${{ secrets.GITHUB_TOKEN }}
