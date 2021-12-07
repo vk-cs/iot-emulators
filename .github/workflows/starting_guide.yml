@@ -1,0 +1,28 @@
+name: Build
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Go
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.16
+
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: Build
+        run: cd starting_guide && make build
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: starting_guide
+          path: starting_guide/bin/starting_guide
