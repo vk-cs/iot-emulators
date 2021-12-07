@@ -23,5 +23,5 @@ jobs:
       - name: Create release
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "release/*"
+          artifacts: "starting_guide/release/*"
           token: ${{ secrets.GITHUB_TOKEN }}
