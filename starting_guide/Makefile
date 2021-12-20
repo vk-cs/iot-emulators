@@ -13,7 +13,7 @@ build-darwin:
 
 .PHONY: build-windows
 build-windows:
-	GOOS=windows GOARCH=amd64 go build -o bin/windows_amd64/starting_guide ./cmd/starting_guide
+	GOOS=windows GOARCH=amd64 go build -o bin/windows_amd64/starting_guide.exe ./cmd/starting_guide
 
 .PHONY: build
 build: \

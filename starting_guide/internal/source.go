@@ -8,6 +8,8 @@ import (
 	"strconv"
 )
 
+const sourceLen = 3373
+
 //go:embed data
 var data embed.FS
 
@@ -54,9 +56,9 @@ func NewDataSource() (*DataSource, error) {
 
 	reader := csv.NewReader(f)
 	reader.Comma = ' '
-	temperature := make([]float64, 0, 3373)
-	humidity := make([]float64, 0, 3373)
-	light := make([]bool, 0, 3373)
+	temperature := make([]float64, 0, sourceLen)
+	humidity := make([]float64, 0, sourceLen)
+	light := make([]bool, 0, sourceLen)
 	for {
 		row, err := reader.Read()
 		if err != nil {
