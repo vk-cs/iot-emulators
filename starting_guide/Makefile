@@ -28,4 +28,4 @@ release:
 	mkdir -p ./release || true
 	zip release/starting_guide_linux_amd64.zip ./bin/linux_amd64/starting_guide
 	zip release/starting_guide_darwin_amd64.zip ./bin/darwin_amd64/starting_guide
-	zip release/starting_guide_windows_amd64.zip ./bin/windows_amd64/starting_guide
+	zip release/starting_guide_windows_amd64.zip ./bin/windows_amd64/starting_guide.exe
