@@ -173,7 +173,7 @@ func (e *Emulator) Run(ctx context.Context) error {
 	defer func() {
 		err := e.onShutdown(context.Background())
 		if err != nil {
-
+			e.logger.Error("Failed to do actions on shutdown", zap.Error(err))
 		}
 	}()
 
@@ -181,6 +181,7 @@ func (e *Emulator) Run(ctx context.Context) error {
 	group.Go(func() error {
 		tag := e.cfg.Device.TemperatureTag
 		ticker := time.NewTicker(getDurationFromDriverConfig(tag.DriverConfig, "event_scrape_interval", time.Minute))
+		defer ticker.Stop()
 		for {
 			select {
 			case <-groupCtx.Done():
@@ -206,6 +207,7 @@ func (e *Emulator) Run(ctx context.Context) error {
 	group.Go(func() error {
 		tag := e.cfg.Device.HumidityTag
 		ticker := time.NewTicker(getDurationFromDriverConfig(tag.DriverConfig, "event_scrape_interval", time.Minute))
+		defer ticker.Stop()
 		for {
 			select {
 			case <-groupCtx.Done():
@@ -231,6 +233,7 @@ func (e *Emulator) Run(ctx context.Context) error {
 	group.Go(func() error {
 		tag := e.cfg.Device.LightTag
 		ticker := time.NewTicker(getDurationFromDriverConfig(tag.DriverConfig, "state_scrape_interval", time.Minute))
+		defer ticker.Stop()
 		for {
 			select {
 			case <-groupCtx.Done():

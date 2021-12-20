@@ -45,12 +45,12 @@ func parseConfig(input models.ConfigObject) (AgentConfig, error) {
 	// FIXME: move system tags paths to sdk
 	agentConfigVersionTag, found := sdk.FindTagByPath(input.Agent.Tag.Children, sdk.ConfigVersionTagPath)
 	if !found {
-		return AgentConfig{}, errors.New("not found status tag in device config")
+		return AgentConfig{}, errors.New("not found config version tag in agent config")
 	}
 
 	agentConfigUpdatedAtTag, found := sdk.FindTagByPath(input.Agent.Tag.Children, sdk.ConfigUpdatedAtTagPath)
 	if !found {
-		return AgentConfig{}, errors.New("not found status tag in device config")
+		return AgentConfig{}, errors.New("not found config updated at tag in agent config")
 	}
 
 	device, found := findDeviceByName(input.Agent.Devices, "emulator")
