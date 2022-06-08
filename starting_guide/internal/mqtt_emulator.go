@@ -9,6 +9,7 @@ import (
 	"time"
 
 	httptransport "github.com/go-openapi/runtime/client"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 
@@ -18,10 +19,6 @@ import (
 	"github.com/vk-cs/iot-go-agent-sdk/gen/swagger/http_client/client"
 	"github.com/vk-cs/iot-go-agent-sdk/gen/swagger/http_client/client/agents"
 	"github.com/vk-cs/iot-go-agent-sdk/gen/swagger/http_client/models"
-)
-
-const (
-	MQTTHost = "tcp://mqtt-api-iot.mcs.mail.ru:1883"
 )
 
 type MQTTEmulator struct {
@@ -34,6 +31,7 @@ type MQTTEmulator struct {
 	cfg        AgentConfig
 	login      string
 	password   string
+	host       string
 }
 
 func (e *MQTTEmulator) getConfig(ctx context.Context) (*models.ConfigObject, error) {
@@ -95,7 +93,7 @@ func (e *MQTTEmulator) connect() error {
 	if err := msg.SetVersion(4); err != nil {
 		return fmt.Errorf("failed to set version: %w", err)
 	}
-	if err := msg.SetClientId([]byte("1")); err != nil {
+	if err := msg.SetClientId([]byte(uuid.New().String())); err != nil {
 		return fmt.Errorf("failed to set client ID: %w", err)
 	}
 	msg.SetWillFlag(true)
@@ -103,7 +101,7 @@ func (e *MQTTEmulator) connect() error {
 	msg.SetPassword([]byte(e.password))
 	msg.SetCleanSession(true)
 
-	return e.mqttClient.Connect(MQTTHost, msg)
+	return e.mqttClient.Connect(e.host, msg)
 }
 
 func (e *MQTTEmulator) onStart() error {
@@ -288,7 +286,7 @@ func (e *MQTTEmulator) Run(ctx context.Context) error {
 }
 
 func NewMQTTEmulator(
-	logger *zap.Logger, source *DataSource, cli *client.HTTP, timeout time.Duration, login, password string,
+	logger *zap.Logger, source *DataSource, cli *client.HTTP, timeout time.Duration, login, password, host string,
 ) *MQTTEmulator {
 	return &MQTTEmulator{
 		logger:     logger,
@@ -298,5 +296,6 @@ func NewMQTTEmulator(
 		source:     source,
 		login:      login,
 		password:   password,
+		host:       host,
 	}
 }

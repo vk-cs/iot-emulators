@@ -18,9 +18,10 @@ import (
 )
 
 const (
-	defaultTimeout = time.Second * 10
-	HTTPProtocol   = "http"
-	MQTTProtocol   = "mqtt"
+	defaultTimeout  = time.Second * 10
+	HTTPProtocol    = "http"
+	MQTTProtocol    = "mqtt"
+	DefaultMQTTHost = "tcp://mqtt-api-iot.mcs.mail.ru:1883"
 )
 
 func main() {
@@ -53,7 +54,8 @@ func main() {
 
 	login := flag.String("login", "", "login for agent")
 	password := flag.String("password", "", "password for agent")
-	protocol := flag.String("protocol", "http", "protocol of agent: mqtt or http")
+	protocol := flag.String("protocol", HTTPProtocol, "protocol of agent: mqtt or http")
+	mqttHost := flag.String("mqtthost", DefaultMQTTHost, "mqtt host with `tcp://{host}:{port}` format")
 
 	flag.Parse()
 	if *login == "" {
@@ -88,7 +90,7 @@ func main() {
 	case HTTPProtocol:
 		emulator = internal.NewHTTPEmulator(logger, source, cli, defaultTimeout, *login, *password)
 	case MQTTProtocol:
-		emulator = internal.NewMQTTEmulator(logger, source, cli, defaultTimeout, *login, *password)
+		emulator = internal.NewMQTTEmulator(logger, source, cli, defaultTimeout, *login, *password, *mqttHost)
 	default:
 		{
 			fmt.Println("Incorrect protocol param:", *protocol)
